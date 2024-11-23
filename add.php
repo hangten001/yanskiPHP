@@ -1,5 +1,5 @@
 <?php
-
+    //connections
     include_once("connections/connection.php");
     $conn = connection();
 
