@@ -1,21 +1,25 @@
 <?php
 
-    function connection(){
-        
-        $host = "localhost";
+function connection() {
+    try {
+        // Set your database credentials
+        $dsn = "mysql:host=localhost;dbname=yanski_system;charset=utf8";
         $username = "root";
         $password = "";
-        $database = "yanski_system";
-
-        $conn = new mysqli($host, $username, $password, $database);
-
-        if($conn->connect_error){
-            error_log("Connection failed: " . $conn->connect_error);
-            die("Database connection failed. Please try again later.");
-        }
-        return $conn;
-
+        $options = array(
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,   // Enable exceptions for errors
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, // Fetch associative arrays by default
+        );
+        
+        // Create a new PDO instance
+        $pdo = new PDO($dsn, $username, $password, $options);
+        
+        // Return the PDO instance
+        return $pdo;
+    } catch (PDOException $e) {
+        die("Connection failed: " . $e->getMessage());
     }
+}
 
 
 

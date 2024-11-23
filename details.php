@@ -20,9 +20,26 @@
 
     $id = $_GET['ID'];
 
-    $sql = "SELECT * FROM student_info WHERE id = '$id'";
-    $students = $conn->query($sql) or die ($conn->error);
-    $row = $students->fetch_assoc();
+    try {
+        // Prepare the SQL query with a placeholder for the ID to prevent SQL injection
+        $sql = "SELECT * FROM student_info WHERE id = :id";
+        $stmt = $conn->prepare($sql);
+        
+        // Bind the parameter to the placeholder
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        if ($students) {
+            // The result is an array, so we take the first (and probably only) student
+            $student = $students[0]; // Get the first row as $student
+        } else {
+            echo "No student found with the provided ID.";
+            exit();
+        }
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage();
+    }
        
 ?>
 <!DOCTYPE html>
@@ -37,10 +54,10 @@
     <form action="delete.php" method="post">
         <br>
         <a href="index.php">Home</a>
-        <a href="edit.php?ID=<?= $row['id'];?>">Edit</a>
+        <a href="edit.php?ID=<?= $student['id'];?>">Edit</a>
         <?php if($_SESSION['Access'] == "admin" || $_SESSION['Access'] == "adviser") { ?>
             <button type="submit" name="delete">Delete</button>
-            <input type="hidden" name="ID" value="<?= $row['id']; ?>">
+            <input type="text" name="ID" value="<?= $student['id']; ?>">
         <?php } ?>
     </form>
 
@@ -55,12 +72,12 @@
             <th><h3>Gender</h3></th>
         </tr>
         <tr>
-            <td><h4><?= $row['id'] ?></h4></td>
-            <td><h4><?= $row['first_name'] ?></h4></td>
-            <td><h4><?= $row['last_name'] ?></h4></td>
-            <td><h4><?= $row['birthday'] ?></h4></td>
-            <td><h4><?= $row['added_at'] ?></h4></td>
-            <td><h4><?= $row['gender'] ?></h4></td>
+            <td><h4><?= $student['id'] ?></h4></td>
+            <td><h4><?= $student['first_name'] ?></h4></td>
+            <td><h4><?= $student['last_name'] ?></h4></td>
+            <td><h4><?= $student['birthday'] ?></h4></td>
+            <td><h4><?= $student['added_at'] ?></h4></td>
+            <td><h4><?= $student['gender'] ?></h4></td>
         </tr>
     </table>
     

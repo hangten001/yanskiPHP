@@ -1,28 +1,45 @@
 <?php
-    session_start();
+    session_start(); // Ensure session is started
 
     include_once("connections/connection.php");
     $conn = connection();
 
-    if(isset($_POST['login'])){
-        $username = $_POST['username'];
-        $password = $_POST['password'];
+if (isset($_POST['login'])) {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
 
-        $sql = "SELECT * FROM student_users WHERE username = '$username' AND password = '$password'";
-        $user = $conn->query($sql) or die ($conn->error);
-        $row = $user->fetch_assoc();
-        $total = $user->num_rows;
+    try {
+        // Prepare the SQL query with placeholders for security (avoid SQL injection)
+        $sql = "SELECT * FROM student_users WHERE username = :username AND password = :password";
+        $stmt = $conn->prepare($sql);
+        
+        // Bind the parameters to the prepared statement
+        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+        $stmt->bindParam(':password', $password, PDO::PARAM_STR);
+        
+        // Execute the query
+        $stmt->execute();
 
-        if($total > 0){
+        // Fetch the result
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Check if the user exists
+        if ($row) {
             $_SESSION['UserLogin'] = $row['username'];
             $_SESSION['Access'] = $row['access'];
             header("Location: index.php");
-        }else{
+            exit; // Make sure to stop further script execution after redirect
+        } else {
             echo "No user found";
         }
+
+    } catch (PDOException $e) {
+        // Handle any errors (e.g., connection issues)
+        echo "Error: " . $e->getMessage();
     }
-   
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

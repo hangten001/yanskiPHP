@@ -18,10 +18,13 @@
     
     include_once("connections/connection.php");
     $conn = connection();
-
-    $sql = "SELECT * FROM student_info ORDER BY id DESC";
-    $students = $conn->query($sql) or die ($conn->error);
-    $row = $students->fetch_assoc();
+     // Prepare the SQL query
+     $sql = "SELECT * FROM student_info ORDER BY id DESC";
+    
+     // Execute the query using PDO
+     $stmt = $conn->prepare($sql);
+     $stmt->execute();
+     $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
    
 ?>
 <!DOCTYPE html>
@@ -56,7 +59,7 @@
             <th>Added_at</th>
             <th>Gender</th>
         </tr>
-        <?php do{ ?>
+        <?php foreach ($students as $row) { ?>
         <tr>
             <td><a href="details.php?ID=<?= $row['id'];?>">view</a></td>
             <td><?= $row['id'] ?></td>
@@ -66,7 +69,7 @@
             <td><?= $row['added_at'] ?></td>
             <td><?= $row['gender'] ?></td>
         </tr>
-        <?php } while ($row = $students->fetch_assoc()); ?>
+        <?php } ?>
     </table>
 </body>
 </html>

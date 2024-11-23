@@ -2,24 +2,59 @@
 
     include_once("connections/connection.php");
     $conn = connection();
+    
     $id = $_GET['ID'];
 
-    $sql = "SELECT * FROM student_info WHERE id = '$id'";
-    $students = $conn->query($sql) or die ($conn->error);
-    $row = $students->fetch_assoc();
+    try {
+        $sql = "SELECT * FROM student_info WHERE id = :id";
+        $stmt = $conn->prepare($sql);
+        
+        // Bind the parameter to the placeholder
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        $students = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+        if ($students === false) {
+            // If no student found with the provided ID
+            echo "No student found with the provided ID.";
+            exit();
+        }
 
-    if(isset($_POST['submit'])){
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage();
+        exit();
+    }
 
+    if (isset($_POST['submit'])) {
         $fname = $_POST['firstname'];
         $lname = $_POST['lastname'];
         $gender = $_POST['gender'];
-
-        $sql = "UPDATE `student_info` 
-        SET `first_name`='$fname',`last_name`='$lname', `gender`= '$gender'
-        WHERE `id`='$id'";
-        $conn->query($sql) or die ($conn->error);
-
-        header("Location: details.php?ID=".$id); 
+    
+        try {
+            // Prepare the SQL query to update student data
+            $sql = "UPDATE student_info 
+                    SET first_name = :firstname, last_name = :lastname, gender = :gender
+                    WHERE id = :id";
+            $stmt = $conn->prepare($sql);
+    
+            // Bind parameters to prevent SQL injection
+            $stmt->bindParam(':firstname', $fname, PDO::PARAM_STR);
+            $stmt->bindParam(':lastname', $lname, PDO::PARAM_STR);
+            $stmt->bindParam(':gender', $gender, PDO::PARAM_STR);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+    
+            // Execute the update query
+            $stmt->execute();
+    
+            // Redirect to the details page after updating
+            header("Location: details.php?ID=" . $id);
+            exit();
+    
+        } catch (PDOException $e) {
+            // Handle any exceptions (e.g., query errors, connection issues)
+            echo "Error: " . $e->getMessage();
+            exit();
+        }
     }
 ?>
 <!DOCTYPE html>
@@ -34,16 +69,16 @@
     <form action="" method="post">
 
         <label>First Name</label>
-        <input type="text" name="firstname" id="firstname" value="<?= $row['first_name']; ?>">
+        <input type="text" name="firstname" id="firstname" value="<?= $students['first_name']; ?>">
         
         <label>Last Name</label>
-        <input type="text" name="lastname" id="lastname" value="<?= $row['last_name']; ?>">
+        <input type="text" name="lastname" id="lastname" value="<?= $students['last_name']; ?>">
 
         <label>Gender</label>
         <select name="gender" id="gender">
-            <option value="male" <?= ($row['gender'] == "male")? 'selected' : ''?>>Male</option>
-            <option value="female" <?= ($row['gender'] == "female")? 'selected' : ''?>>Female</option>
-            <option value="others" <?= ($row['gender'] == "others")? 'selected' : ''?>>Others</option>
+            <option value="male" <?= ($students['gender'] == "male")? 'selected' : ''?>>Male</option>
+            <option value="female" <?= ($students['gender'] == "female")? 'selected' : ''?>>Female</option>
+            <option value="others" <?= ($students['gender'] == "others")? 'selected' : ''?>>Others</option>
         </select>
 
         <input type="submit" name="submit" value="Update">
